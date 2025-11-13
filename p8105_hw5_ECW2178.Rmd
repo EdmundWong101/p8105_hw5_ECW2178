@@ -16,33 +16,55 @@ runif(6, min = 1, max = 365)
 ```
 
 ```{r problem_2}
-output = vector("list", length = 5000)
+# ok so to solve this you need to run it six times but each time it goes with a different value in the list 
+#so when you create a function to run it 
+#but when you call the function, it needs to be a list 
 
-dataset_generator = function(x){
-  n = 30
-  sigma = 5
-  mu = 0 #this needs to reference to the outside list??? 
-  mu_list = c(0, 1, 2, 3, 4, 5, 6)
-  
-  sample = rnorm(n, mu, sigma)
-  result = t.test(sample, paired = FALSE, conf.level = 0.05) %>% 
-    broom::tidy()
-  
-  extract_result = tibble(
-    estimate = result$estimate,
-    p.value = result$p.value
-  )
-}
+#but it needs to be in a for loop as well?
 
-for (i in 1:5000) {
-  output[[i]] = dataset_generator(list(extract_result[[i]]))
-}
+mu_list = c(0, 1, 2, 3, 4, 5, 6) 
+
+power_example = function(x){ 
+  
+  x = mu_list
+  
+  # this creates the big list to store everything in 
+  output = vector("list", length = 5000)
+  
+  # this creates the t-test and stores the result in the table
+  dataset_generator = function(mu){
+    n = 30
+    sigma = 5
+    
+    # mu will be need to change values 
+    mu = mu
+    
+    sample = rnorm(n, mu, sigma)
+    result = t.test(sample, paired = FALSE, conf.level = 0.05) %>% 
+      broom::tidy()
+    
+    extract_result = tibble(
+      estimate = result$estimate,
+      p.value = result$p.value
+    )
+  }
+  # this runs the list 5000 times
+  for (i in 1:5000) {
+    output[[i]] = dataset_generator(list(extract_result[[i]]))
+  }
+} 
+
+
 ```
 
 
 ```{r problem_3}
-homicides = read_csv(
-  "https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv"
-)
+homicides = read_csv("https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv") %>% 
+  mutate(city_state = paste(city, state, sep = ", ")) %>% 
+  group_by(city_state) %>% 
+  summarize(
+    homicides = n(),
+    unsolved = sum(disposition %in% c("Closed without arrest", "Open/No arrest"))
+  )
 ```
 
