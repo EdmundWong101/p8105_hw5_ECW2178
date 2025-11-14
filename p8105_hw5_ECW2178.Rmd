@@ -19,52 +19,107 @@ runif(6, min = 1, max = 365)
 # ok so to solve this you need to run it six times but each time it goes with a different value in the list 
 #so when you create a function to run it 
 #but when you call the function, it needs to be a list 
-
 #but it needs to be in a for loop as well?
 
 mu_list = c(0, 1, 2, 3, 4, 5, 6) 
 
-power_example = function(x){ 
-  
-  x = mu_list
-  
-  # this creates the big list to store everything in 
-  output = vector("list", length = 5000)
-  
-  # this creates the t-test and stores the result in the table
-  dataset_generator = function(mu){
-    n = 30
-    sigma = 5
-    
-    # mu will be need to change values 
-    mu = mu
-    
-    sample = rnorm(n, mu, sigma)
-    result = t.test(sample, paired = FALSE, conf.level = 0.05) %>% 
-      broom::tidy()
-    
-    extract_result = tibble(
-      estimate = result$estimate,
-      p.value = result$p.value
-    )
-  }
-  # this runs the list 5000 times
-  for (i in 1:5000) {
-    output[[i]] = dataset_generator(list(extract_result[[i]]))
-  }
-} 
+#output = vector("list", length = 5000)
 
+dataset_generator = function(mu){
+  n = 30
+  sigma = 5
+  
+  sample = rnorm(n, mu, sigma)
+  result = t.test(sample, paired = FALSE, conf.level = 0.05) %>% 
+    broom::tidy()
+  
+  
+  return(list(
+    estimate = result$estimate,
+    pvalue = result$p.value))
+  
+  # extract_result = tibble(
+  #   estimate = result$estimate,
+  #   p.value = result$p.value
+  # )
+}
 
+power_example = function(mu){ 
+}
+
+run_many = function(mu){
+  out = vector("list", 5000)
+  for (i in 1:5000){
+    out [[i]] = dataset_generator(mu)
+  }
+  return(out)
+}
+
+all_results = vector("list", length(mu_list))
+
+for (i in 1:length(mu_list)){
+  all_results[[i]] = run_many(mu_list[i])
+}
 ```
 
 
 ```{r problem_3}
-homicides = read_csv("https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv") %>% 
+homicides_raw = read_csv("https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv") 
+
+homicides = homicides_raw %>% 
   mutate(city_state = paste(city, state, sep = ", ")) %>% 
   group_by(city_state) %>% 
   summarize(
     homicides = n(),
     unsolved = sum(disposition %in% c("Closed without arrest", "Open/No arrest"))
   )
+
+# ok give a list of the cities 
+# create a function 
+# run it for each in the list 
+
+cities = homicides$city_state
+
+homicides_by_city = function(city){
+  city_homicides = homicides %>% 
+    filter(city_state == city)
+  
+  city_result = prop.test(city_homicides$unsolved , city_homicides$homicides) %>% 
+    broom::tidy() 
+  
+  reuslts_extract = tibble(
+    estimate = city_result$estimate,
+    conf.low = city_result$conf.low,
+    conf.high = city_result$conf.high)
+}
+
+# initialize dataset 
+
+for (i in 1:length(cities)){
+  homicides_by_city(cities[i])
+  # store 'em 
+}
+
+
+
+
+# 
+# 
+# ###
+# cities = homicides$city_state
+# 
+# homicide_by_city = function(x){
+#   city_homicides = homicides %>% 
+#     filter(city_state == city_state)
+#   
+#   city_prop = prop.test(city_homicides$unsolved ,  city_homicides$homicides) %>% 
+#     broom::tidy() 
+#   
+#   city_results = tibble(
+#     estimate = city_prop$estimate,
+#     conf.low = city_prop$conf.low,
+#     conf.high = city_prop$conf.high
+#   )
+# }
 ```
 
