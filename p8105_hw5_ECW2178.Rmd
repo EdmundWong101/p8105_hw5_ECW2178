@@ -9,6 +9,8 @@ library(tidyverse)
 library(rvest)
 ```
 
+### Problem 1
+
 ```{r problem_1}
 set.seed(343215)
 
@@ -40,6 +42,9 @@ bday_sim_results %>%
 ```
 
 As expected, as the number in each group increases, there is a gradual increase in the probability of a repeated birthday. However, this increase is unexpectedly large- once there is more than 22 people in a group, there is a greater than 50% chance of a repeated birthday. 
+
+
+### Problem 2
 
 ```{r problem_2}
 mu_list = c(0, 1, 2, 3, 4, 5, 6) 
@@ -113,7 +118,7 @@ average_rejections = power_results %>%
   group_by(true_mu) %>%
   summarize(avg_estimate_rejected = mean(estimate))
   
-ggplot(average_estimates, aes(x = mu, y = avg_estimate)) +
+ggplot(average_estimates, aes(x = true_mu, y = avg_estimate)) +
   geom_line() +
   geom_point() +
   labs(
@@ -123,18 +128,25 @@ ggplot(average_estimates, aes(x = mu, y = avg_estimate)) +
   )
 
 ggplot() +
-  geom_line(data = average_estimates, aes(x = mu, y = avg_estimate)) +
-  geom_point(data = average_estimates, aes(x = mu, y = avg_estimate)) +
+  geom_line(data = average_estimates, aes(x = true_mu, y = avg_estimate)) +
+  geom_point(data = average_estimates, aes(x = true_mu, y = avg_estimate)) +
   
-  geom_line(data = average_rejections, aes(x = mu, y = avg_estimate_rejected), linetype = "dashed") +
-  geom_point(data = average_rejections, aes(x = mu, y = avg_estimate_rejected)) +
+  geom_line(data = average_rejections, aes(x = true_mu, y = avg_estimate_rejected), linetype = "dashed") +
+  geom_point(data = average_rejections, aes(x = true_mu, y = avg_estimate_rejected)) +
   labs(
     title = "Average mu hat Overall vs. Conditional on Rejecting Null",
     x = "True Mean",
     y = "Average mu"
   )
+
+
 ```
 
+The plot shows that power increases when the sample size and effect size is larger.
+
+The sample average of mu across tests for which the null is not rejected approximately equal to the true value of mu because the estimates aren't filtered by statistical significance and aren't subjected to selection bias. 
+
+### Problem 3
 
 The homicides raw dataset contains details of the arrests on individuals made across cities in the United States such as arrest ID, date of arrest, name, demographics, city, exact location, and disposition. 
 
