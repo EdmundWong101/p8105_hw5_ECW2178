@@ -92,7 +92,7 @@ for (i in 1:length(mu_list)) {
 }
 
 power_example =  power_results %>%
-  group_by(mu) %>%
+  group_by(true_mu) %>%
   summarize(power = mean(pvalue < 0.05))
 
 ggplot(power_example, aes(x = mu, y = power)) +
@@ -105,8 +105,13 @@ ggplot(power_example, aes(x = mu, y = power)) +
   )
 
 average_estimates = power_results %>%
-  group_by(mu) %>%
+  group_by(true_mu) %>%
   summarize(avg_estimate = mean(estimate))
+
+average_rejections = power_results %>%
+  filter(pvalue < 0.05) %>%
+  group_by(true_mu) %>%
+  summarize(avg_estimate_rejected = mean(estimate))
   
 ggplot(average_estimates, aes(x = mu, y = avg_estimate)) +
   geom_line() +
@@ -116,11 +121,6 @@ ggplot(average_estimates, aes(x = mu, y = avg_estimate)) +
     x = "True Mean",
     y = "Average mu hat"
   )
-
-average_rejections = power_results %>%
-  filter(pvalue < 0.05) %>%
-  group_by(mu) %>%
-  summarize(avg_estimate_rejected = mean(estimate))
 
 ggplot() +
   geom_line(data = average_estimates, aes(x = mu, y = avg_estimate)) +
@@ -179,33 +179,5 @@ city_results_plot = city_results %>%
   )
 city_results_plot
 
-# ok give a list of the cities 
-# create a function 
-# run it for each in the list 
-
-# cities = homicides$city_state
-
-# homicides_by_city = function(city){
-#   city_homicides = homicides %>% 
-#     filter(city_state == city)
-#   
-#   city_result = prop.test(city_homicides$unsolved , city_homicides$homicides) %>% 
-#     broom::tidy() %>% 
-#     select(estimate, conf.low, conf.high) %>% 
-#     mutate(city_state = city)
-#   
-#   return(city_result)
-# }
-
-#results = map_dfr(cities, homicides_by_city)
-
-
-
-
-# output_list = vector("list", length(cities))
-# 
-# for (i in 1:length(cities)){
-#   output_list[[i]] = homicides_by_city(cities[i])
-# }
 ```
 
