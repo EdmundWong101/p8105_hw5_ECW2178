@@ -12,8 +12,34 @@ library(rvest)
 ```{r problem_1}
 set.seed(343215)
 
-runif(6, min = 1, max = 365)
+bday_sim = function(n_room){
+  birthdays = sample(1:365, n_room, replace = TRUE)
+  repeated_bday = length(unique(birthdays)) < n_room
+  repeated_bday
+}
+
+bday_sim(20)
+
+bday_sim_results = 
+  expand_grid(
+    bdays = 2:50,
+    iter = 1:10000
+  ) %>% 
+  mutate(
+    result = map_lgl(bdays, bday_sim)
+  ) %>% 
+  group_by(bdays) %>% 
+  summarize(
+    prob_repeat = mean(result)
+  )
+
+bday_sim_results %>% 
+  ggplot(aes(x = bdays, y = prob_repeat)) +
+  geom_point() + 
+  geom_line()
 ```
+
+As expected, as the number in each group increases, there is a gradual increase in the probability of a repeated birthday. However, this increase is unexpectedly large- once there is more than 22 people in a group, there is a greater than 50% chance of a repeated birthday. 
 
 ```{r problem_2}
 # ok so to solve this you need to run it six times but each time it goes with a different value in the list 
@@ -30,7 +56,7 @@ dataset_generator = function(mu){
   sigma = 5
   
   sample = rnorm(n, mu, sigma)
-  result = t.test(sample, paired = FALSE, conf.level = 0.05) %>% 
+  result = t.test(sample, mu = 0) %>% 
     broom::tidy()
   
   
@@ -44,8 +70,8 @@ dataset_generator = function(mu){
   # )
 }
 
-power_example = function(mu){ 
-}
+# power_example = function(mu){ 
+# }
 
 run_many = function(mu){
   out = vector("list", 5000)
@@ -61,11 +87,11 @@ for (i in 1:length(mu_list)){
   all_results[[i]] = run_many(mu_list[i])
 }
 
-for (i in 1:length(mu_list)){
-  mu_value = mu_list[i]
-  simulations = all_results[i]
-  
-}
+# for (i in 1:length(mu_list)){
+#   mu_value = mu_list[i]
+#   simulations = all_results[i]
+#   
+# }
 
 
 results_df = data.frame(estimate = numeric(),
@@ -75,9 +101,8 @@ results_df = data.frame(estimate = numeric(),
 for (i in 1:length(mu_list)) {
   
   mu_value = mu_list[i]
-  sims = all_results[[i]]  # 5000 simulation results for this mu
+  sims = all_results[[i]]  
   
-  # loop over each simulation
   for (j in 1:length(sims)) {
     results_df = rbind(results_df,
                         data.frame(
@@ -89,6 +114,8 @@ for (i in 1:length(mu_list)) {
 }
 ```
 
+
+The homicides raw dataset contains details of the arrests on individuals made across cities in the United States such as arrest ID, date of arrest, name, demographics, city, exact location, and disposition. 
 
 ```{r problem_3}
 homicides_raw = read_csv("https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv") 
@@ -109,7 +136,7 @@ baltimore_result = prop.test(baltimore_homicides$unsolved , baltimore_homicides$
     select(estimate, conf.low, conf.high)
 
 
-results = homicides %>% 
+city_results = homicides %>% 
   mutate(
     test = map2(unsolved, homicides, ~ prop.test(.x, .y)),
     tidy = map(test, broom::tidy)
@@ -118,7 +145,7 @@ results = homicides %>%
   unnest(tidy) %>% 
   select(city_state, estimate, conf.low, conf.high)
 
-results %>% 
+city_results_plot = city_results %>% 
   arrange(estimate) %>% 
   mutate(city_state = factor(city_state, levels = city_state)) %>%  
   ggplot(aes(x = estimate, y = city_state)) +
@@ -127,10 +154,9 @@ results %>%
   labs(
     x = "Proportion of Unsolved Homicides",
     y = "City",
-    title = "Estimated Proportion of Unsolved Homicides by City",
-    subtitle = "With 95% Confidence Intervals"
+    title = "Estimated Proportion of Unsolved Homicides by City"
   )
-
+city_results_plot
 
 # ok give a list of the cities 
 # create a function 
