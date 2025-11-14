@@ -95,7 +95,7 @@ power_example =  power_results %>%
   group_by(true_mu) %>%
   summarize(power = mean(pvalue < 0.05))
 
-ggplot(power_example, aes(x = mu, y = power)) +
+ggplot(power_example, aes(x = true_mu, y = power)) +
   geom_line() +
   geom_point() +
   labs(
