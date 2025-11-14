@@ -60,6 +60,33 @@ all_results = vector("list", length(mu_list))
 for (i in 1:length(mu_list)){
   all_results[[i]] = run_many(mu_list[i])
 }
+
+for (i in 1:length(mu_list)){
+  mu_value = mu_list[i]
+  simulations = all_results[i]
+  
+}
+
+
+results_df = data.frame(estimate = numeric(),
+                         pvalue = numeric(),
+                         true_mu = numeric())
+
+for (i in 1:length(mu_list)) {
+  
+  mu_value = mu_list[i]
+  sims = all_results[[i]]  # 5000 simulation results for this mu
+  
+  # loop over each simulation
+  for (j in 1:length(sims)) {
+    results_df = rbind(results_df,
+                        data.frame(
+                          estimate = sims[[j]]$estimate,
+                          pvalue = sims[[j]]$pvalue,
+                          true_mu = mu_value
+                        ))
+  }
+}
 ```
 
 
@@ -74,52 +101,64 @@ homicides = homicides_raw %>%
     unsolved = sum(disposition %in% c("Closed without arrest", "Open/No arrest"))
   )
 
+baltimore_homicides = homicides %>%
+  filter(city_state == "Baltimore, MD")
+
+baltimore_result = prop.test(baltimore_homicides$unsolved , baltimore_homicides$homicides) %>% 
+    broom::tidy() %>%
+    select(estimate, conf.low, conf.high)
+
+
+results = homicides %>% 
+  mutate(
+    test = map2(unsolved, homicides, ~ prop.test(.x, .y)),
+    tidy = map(test, broom::tidy)
+  ) %>% 
+  select(city_state, tidy) %>% 
+  unnest(tidy) %>% 
+  select(city_state, estimate, conf.low, conf.high)
+
+results %>% 
+  arrange(estimate) %>% 
+  mutate(city_state = factor(city_state, levels = city_state)) %>%  
+  ggplot(aes(x = estimate, y = city_state)) +
+  geom_point() +
+  geom_errorbar(aes(xmin = conf.low, xmax = conf.high), width = 0.2) +
+  labs(
+    x = "Proportion of Unsolved Homicides",
+    y = "City",
+    title = "Estimated Proportion of Unsolved Homicides by City",
+    subtitle = "With 95% Confidence Intervals"
+  )
+
+
 # ok give a list of the cities 
 # create a function 
 # run it for each in the list 
 
-cities = homicides$city_state
-
-homicides_by_city = function(city){
-  city_homicides = homicides %>% 
-    filter(city_state == city)
-  
-  city_result = prop.test(city_homicides$unsolved , city_homicides$homicides) %>% 
-    broom::tidy() 
-  
-  reuslts_extract = tibble(
-    estimate = city_result$estimate,
-    conf.low = city_result$conf.low,
-    conf.high = city_result$conf.high)
-}
-
-# initialize dataset 
-
-for (i in 1:length(cities)){
-  homicides_by_city(cities[i])
-  # store 'em 
-}
-
-
-
-
-# 
-# 
-# ###
 # cities = homicides$city_state
-# 
-# homicide_by_city = function(x){
+
+# homicides_by_city = function(city){
 #   city_homicides = homicides %>% 
-#     filter(city_state == city_state)
+#     filter(city_state == city)
 #   
-#   city_prop = prop.test(city_homicides$unsolved ,  city_homicides$homicides) %>% 
-#     broom::tidy() 
+#   city_result = prop.test(city_homicides$unsolved , city_homicides$homicides) %>% 
+#     broom::tidy() %>% 
+#     select(estimate, conf.low, conf.high) %>% 
+#     mutate(city_state = city)
 #   
-#   city_results = tibble(
-#     estimate = city_prop$estimate,
-#     conf.low = city_prop$conf.low,
-#     conf.high = city_prop$conf.high
-#   )
+#   return(city_result)
+# }
+
+#results = map_dfr(cities, homicides_by_city)
+
+
+
+
+# output_list = vector("list", length(cities))
+# 
+# for (i in 1:length(cities)){
+#   output_list[[i]] = homicides_by_city(cities[i])
 # }
 ```
 
