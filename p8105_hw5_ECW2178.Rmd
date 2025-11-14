@@ -42,14 +42,7 @@ bday_sim_results %>%
 As expected, as the number in each group increases, there is a gradual increase in the probability of a repeated birthday. However, this increase is unexpectedly large- once there is more than 22 people in a group, there is a greater than 50% chance of a repeated birthday. 
 
 ```{r problem_2}
-# ok so to solve this you need to run it six times but each time it goes with a different value in the list 
-#so when you create a function to run it 
-#but when you call the function, it needs to be a list 
-#but it needs to be in a for loop as well?
-
 mu_list = c(0, 1, 2, 3, 4, 5, 6) 
-
-#output = vector("list", length = 5000)
 
 dataset_generator = function(mu){
   n = 30
@@ -59,19 +52,10 @@ dataset_generator = function(mu){
   result = t.test(sample, mu = 0) %>% 
     broom::tidy()
   
-  
   return(list(
     estimate = result$estimate,
     pvalue = result$p.value))
-  
-  # extract_result = tibble(
-  #   estimate = result$estimate,
-  #   p.value = result$p.value
-  # )
 }
-
-# power_example = function(mu){ 
-# }
 
 run_many = function(mu){
   out = vector("list", 5000)
@@ -87,14 +71,8 @@ for (i in 1:length(mu_list)){
   all_results[[i]] = run_many(mu_list[i])
 }
 
-# for (i in 1:length(mu_list)){
-#   mu_value = mu_list[i]
-#   simulations = all_results[i]
-#   
-# }
 
-
-results_df = data.frame(estimate = numeric(),
+power_results = data.frame(estimate = numeric(),
                          pvalue = numeric(),
                          true_mu = numeric())
 
@@ -104,7 +82,7 @@ for (i in 1:length(mu_list)) {
   sims = all_results[[i]]  
   
   for (j in 1:length(sims)) {
-    results_df = rbind(results_df,
+    power_results = rbind(power_results,
                         data.frame(
                           estimate = sims[[j]]$estimate,
                           pvalue = sims[[j]]$pvalue,
@@ -112,6 +90,49 @@ for (i in 1:length(mu_list)) {
                         ))
   }
 }
+
+power_example =  power_results %>%
+  group_by(mu) %>%
+  summarize(power = mean(pvalue < 0.05))
+
+ggplot(power_example, aes(x = mu, y = power)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Power Curve for One-Sample t-test",
+    x = "True Mean",
+    y = "Power"
+  )
+
+average_estimates = power_results %>%
+  group_by(mu) %>%
+  summarize(avg_estimate = mean(estimate))
+  
+ggplot(average_estimates, aes(x = mu, y = avg_estimate)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Average Estimate of mu Across Simulations",
+    x = "True Mean",
+    y = "Average mu hat"
+  )
+
+average_rejections = power_results %>%
+  filter(pvalue < 0.05) %>%
+  group_by(mu) %>%
+  summarize(avg_estimate_rejected = mean(estimate))
+
+ggplot() +
+  geom_line(data = average_estimates, aes(x = mu, y = avg_estimate)) +
+  geom_point(data = average_estimates, aes(x = mu, y = avg_estimate)) +
+  
+  geom_line(data = average_rejections, aes(x = mu, y = avg_estimate_rejected), linetype = "dashed") +
+  geom_point(data = average_rejections, aes(x = mu, y = avg_estimate_rejected)) +
+  labs(
+    title = "Average mu hat Overall vs. Conditional on Rejecting Null",
+    x = "True Mean",
+    y = "Average mu"
+  )
 ```
 
 
